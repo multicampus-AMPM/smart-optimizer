@@ -1,6 +1,0 @@
-{
-  "RandomForestClassifier_score_x_test": "RandomForestClassifier.score(X=x_test, y=y_test)",
-  "accuracy_score_x_test": "accuracy_score(y_true=prediction, y_pred=y_test)",
-  "precision_score-2_x_test": "precision_score(y_true=prediction, y_pred=y_test)",
-  "precision_score_x_test": "precision_score(y_true=prediction, y_pred=y_test)"
-}

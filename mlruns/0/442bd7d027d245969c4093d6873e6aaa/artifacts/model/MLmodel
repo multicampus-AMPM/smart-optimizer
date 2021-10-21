@@ -1,0 +1,27 @@
+artifact_path: model
+flavors:
+  python_function:
+    env: conda.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    python_version: 3.7.12
+  sklearn:
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 0.22.2.post1
+run_id: 442bd7d027d245969c4093d6873e6aaa
+signature:
+  inputs: '[{"name": "reallocated-sectors-count-normal", "type": "long"}, {"name":
+    "reallocated-sectors-count-raw", "type": "long"}, {"name": "power-on-hours-normal",
+    "type": "long"}, {"name": "power-on-hours-raw", "type": "long"}, {"name": "power-cycle-count-normal",
+    "type": "long"}, {"name": "power-cycle-count-raw", "type": "double"}, {"name":
+    "reported-uncorrectable-errors-normal", "type": "double"}, {"name": "reported-uncorrectable-errors-raw",
+    "type": "double"}, {"name": "temperature-difference-normal", "type": "double"},
+    {"name": "temperature-difference-raw", "type": "double"}, {"name": "hardware-ecc-recovered-normal",
+    "type": "double"}, {"name": "hardware-ecc-recovered-raw", "type": "double"}, {"name":
+    "ultradma-crc-error-count-normal", "type": "double"}, {"name": "ultradma-crc-error-count-raw",
+    "type": "double"}, {"name": "total-lbas-written-normal", "type": "double"}, {"name":
+    "total-lbas-written-raw", "type": "double"}, {"name": "total-lbas-read-normal",
+    "type": "double"}, {"name": "total-lbas-read-raw", "type": "double"}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "int64", "shape": [-1]}}]'
+utc_time_created: '2021-10-21 07:33:40.260021'
