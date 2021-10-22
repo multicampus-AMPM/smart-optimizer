@@ -1,0 +1,96 @@
+artifact_path: model
+flavors:
+  python_function:
+    env: conda.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    python_version: 3.7.12
+  sklearn:
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 0.22.2.post1
+run_id: 50afe1184f7f429d817d4fe03eec25f8
+signature:
+  inputs: '[{"name": "read-error-rate-normal", "type": "double"}, {"name": "read-error-rate-raw",
+    "type": "double"}, {"name": "throughput-performance-normal", "type": "double"},
+    {"name": "throughput-performance-raw", "type": "double"}, {"name": "spin-up-time-normal",
+    "type": "double"}, {"name": "spin-up-time-raw", "type": "double"}, {"name": "start/stop-count-normal",
+    "type": "double"}, {"name": "start/stop-count-raw", "type": "double"}, {"name":
+    "reallocated-sectors-count-normal", "type": "double"}, {"name": "reallocated-sectors-count-raw",
+    "type": "double"}, {"name": "seek-error-rate-normal", "type": "double"}, {"name":
+    "seek-error-rate-raw", "type": "double"}, {"name": "seek-time-performance-normal",
+    "type": "double"}, {"name": "seek-time-performance-raw", "type": "double"}, {"name":
+    "power-on-hours-normal", "type": "double"}, {"name": "power-on-hours-raw", "type":
+    "double"}, {"name": "spin-retry-count-normal", "type": "double"}, {"name": "spin-retry-count-raw",
+    "type": "double"}, {"name": "recalibration-retries-normal", "type": "double"},
+    {"name": "recalibration-retries-raw", "type": "double"}, {"name": "power-cycle-count-normal",
+    "type": "double"}, {"name": "power-cycle-count-raw", "type": "double"}, {"name":
+    "soft-read-error-rate-normal", "type": "double"}, {"name": "soft-read-error-rate-raw",
+    "type": "double"}, {"name": "current-helium-level-normal", "type": "double"},
+    {"name": "current-helium-level-raw", "type": "double"}, {"name": "available-reserved-space-normal",
+    "type": "double"}, {"name": "available-reserved-space-raw", "type": "double"},
+    {"name": "ssd-wear-leveling-count-normal", "type": "double"}, {"name": "ssd-wear-leveling-count-raw",
+    "type": "double"}, {"name": "unexpected-power-loss-count-normal", "type": "double"},
+    {"name": "unexpected-power-loss-count-raw", "type": "double"}, {"name": "power-loss-protection-failure-normal",
+    "type": "double"}, {"name": "power-loss-protection-failure-raw", "type": "double"},
+    {"name": "wear-range-delta-normal", "type": "double"}, {"name": "wear-range-delta-raw",
+    "type": "double"}, {"name": "used-reserved-block-count-total-normal", "type":
+    "double"}, {"name": "used-reserved-block-count-total-raw", "type": "double"},
+    {"name": "unused-reserved-block-count-total-normal", "type": "double"}, {"name":
+    "unused-reserved-block-count-total-raw", "type": "double"}, {"name": "program-fail-count-total-normal",
+    "type": "double"}, {"name": "program-fail-count-total-raw", "type": "double"},
+    {"name": "erase-fail-count-normal", "type": "double"}, {"name": "erase-fail-count-raw",
+    "type": "double"}, {"name": "sata-downshift-error-count-normal", "type": "double"},
+    {"name": "sata-downshift-error-count-raw", "type": "double"}, {"name": "end-to-end-error-normal",
+    "type": "double"}, {"name": "end-to-end-error-raw", "type": "double"}, {"name":
+    "reported-uncorrectable-errors-normal", "type": "double"}, {"name": "reported-uncorrectable-errors-raw",
+    "type": "double"}, {"name": "command-timeout-normal", "type": "double"}, {"name":
+    "command-timeout-raw", "type": "double"}, {"name": "high-fly-writes-normal", "type":
+    "double"}, {"name": "high-fly-writes-raw", "type": "double"}, {"name": "temperature-difference-normal",
+    "type": "double"}, {"name": "temperature-difference-raw", "type": "double"}, {"name":
+    "g-sense-error-rate-normal", "type": "double"}, {"name": "g-sense-error-rate-raw",
+    "type": "double"}, {"name": "power-off-retract-count-normal", "type": "double"},
+    {"name": "power-off-retract-count-raw", "type": "double"}, {"name": "load-cycle-count-normal",
+    "type": "double"}, {"name": "load-cycle-count-raw", "type": "double"}, {"name":
+    "temperature-normal", "type": "double"}, {"name": "temperature-raw", "type": "double"},
+    {"name": "hardware-ecc-recovered-normal", "type": "double"}, {"name": "hardware-ecc-recovered-raw",
+    "type": "double"}, {"name": "reallocation-event-count-normal", "type": "double"},
+    {"name": "reallocation-event-count-raw", "type": "double"}, {"name": "current-pending-sector-count-normal",
+    "type": "double"}, {"name": "current-pending-sector-count-raw", "type": "double"},
+    {"name": "(offline)-uncorrectable-sector-count-normal", "type": "double"}, {"name":
+    "(offline)-uncorrectable-sector-count-raw", "type": "double"}, {"name": "ultradma-crc-error-count-normal",
+    "type": "double"}, {"name": "ultradma-crc-error-count-raw", "type": "double"},
+    {"name": "multi-zone-error-rate-normal", "type": "double"}, {"name": "multi-zone-error-rate-raw",
+    "type": "double"}, {"name": "soft-read-error-rate-normal.1", "type": "double"},
+    {"name": "soft-read-error-rate-raw.1", "type": "double"}, {"name": "data-address-mark-errors-normal",
+    "type": "double"}, {"name": "data-address-mark-errors-raw", "type": "double"},
+    {"name": "flying-height-normal", "type": "double"}, {"name": "flying-height-raw",
+    "type": "double"}, {"name": "vibration-during-write-normal", "type": "double"},
+    {"name": "vibration-during-write-raw", "type": "double"}, {"name": "disk-shift-normal",
+    "type": "double"}, {"name": "disk-shift-raw", "type": "double"}, {"name": "loaded-hours-normal",
+    "type": "double"}, {"name": "loaded-hours-raw", "type": "double"}, {"name": "load/unload-retry-count-normal",
+    "type": "double"}, {"name": "load/unload-retry-count-raw", "type": "double"},
+    {"name": "load-friction-normal", "type": "double"}, {"name": "load-friction-raw",
+    "type": "double"}, {"name": "load/unload-cycle-count-normal", "type": "double"},
+    {"name": "load/unload-cycle-count-raw", "type": "double"}, {"name": "load-''in''-time-normal",
+    "type": "double"}, {"name": "load-''in''-time-raw", "type": "double"}, {"name":
+    "life-left-(ssds)-normal", "type": "double"}, {"name": "life-left-(ssds)-raw",
+    "type": "double"}, {"name": "endurance-remaining-normal", "type": "double"}, {"name":
+    "endurance-remaining-raw", "type": "double"}, {"name": "media-wearout-indicator-(ssds)-normal",
+    "type": "double"}, {"name": "media-wearout-indicator-(ssds)-raw", "type": "double"},
+    {"name": "average-erase-count-and-maximum-erase-count-normal", "type": "double"},
+    {"name": "average-erase-count-and-maximum-erase-count-raw", "type": "double"},
+    {"name": "good-block-count-and-system(free)-block-count-normal", "type": "double"},
+    {"name": "good-block-count-and-system(free)-block-count-raw", "type": "double"},
+    {"name": "head-flying-hours-normal", "type": "double"}, {"name": "head-flying-hours-raw",
+    "type": "double"}, {"name": "total-lbas-written-normal", "type": "double"}, {"name":
+    "total-lbas-written-raw", "type": "double"}, {"name": "total-lbas-read-normal",
+    "type": "double"}, {"name": "total-lbas-read-raw", "type": "double"}, {"name":
+    "read-error-retry-rate-normal", "type": "double"}, {"name": "read-error-retry-rate-raw",
+    "type": "double"}, {"name": "minimum-spares-remaining-normal", "type": "double"},
+    {"name": "minimum-spares-remaining-raw", "type": "double"}, {"name": "newly-added-bad-flash-block-normal",
+    "type": "double"}, {"name": "newly-added-bad-flash-block-raw", "type": "double"},
+    {"name": "free-fall-protection-normal", "type": "double"}, {"name": "free-fall-protection-raw",
+    "type": "double"}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "int64", "shape": [-1]}}]'
+utc_time_created: '2021-10-22 00:24:00.707889'
