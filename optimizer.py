@@ -1,86 +1,119 @@
+from flask import Flask
+from prometheus_flask_exporter import PrometheusMetrics
+from prometheus_client.core import GaugeMetricFamily
 import os
 import mlflow
-from mlflow.tracking import MlflowClient
-from mlflow.entities import Metric, Param, RunTag
-import time
+from models import RF, XGB, OCSVM, register_model
+import pandas as pd
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-
-def get_batch(run_info):
-    metrics = list()
-    params = list()
-    tags = list()
-    dict_info = run_info.to_dict()
-    for key in dict_info.keys():
-        if key.startswith('metric'):
-            metrics.append(Metric(key, dict_info[key], int(time.time() * 1000), 0))
-        elif key.startswith('params'):
-            # params.append(Param(key, dict_info[key]))
-            # 역직렬화에서 None을 literal하게 None으로 치환하면 sqlite에서 뱉어냄 (버그인듯)
-            params.append(Param(key, 'None' if dict_info[key] is None else dict_info[key]))
-        elif key.startswith('tags'):
-            # 5000자 넘어가면 저장 못함
-            if key == 'tags.mlflow.log-model.history':
-                continue
-            tags.append(RunTag(key, dict_info[key]))
-    return {
-        'name' : dict_info['tags.estimator_name'],
-        'metrics' : metrics,
-        'params' : params,
-        'tags' : tags
+PARAMS = {
+    'RF': {
+        'n_estimators': [10, 50, 100],
+        'max_features': ['auto', 3, 5]
+    },
+    'XGB': {
+        'n_estimators': [10, 50, 100],
+        'learning_rate': [0.1, 0.2],
+        'max_depth': [6]
+    },
+    'OCSVM': {
+        # kernel='precomputed'can only be used when passing a (n_samples, n_samples) data matrix that represents pairwise similarities for the samples instead of the traditional (n_samples, n_features) rectangular data matrix.
+        'kernel': ['rbf', 'linear', 'poly', 'sigmoid'],
+        'gamma': ['scale', 'auto'],
+        'nu': [0.1, 0.3, 0.5, 0.7]
     }
+}
 
 
-def save_runs():
-    local_runs = mlflow.search_runs()
-    if local_runs.size != 0:
-        mlflow.set_tracking_uri(os.environ['tracking'])
-        client = MlflowClient()
+class SmartOptimizerExporter(object):
 
-        # TODO: experiments를 default 쓰면 ~/0/밑에 생성되고 왜 새로 만들면 그냥 생기냐
-        # exp = client.get_experiment_by_name('SMART')
-        # if exp is None:
-        #     client.create_experiment('SMART', os.environ['ftp'])
-        #     exp = client.get_experiment_by_name('SMART')    
-        
-        mlflow.autolog()
-        for idx in range(local_runs.shape[0]):
-            batch = get_batch(local_runs.loc[idx])
-            print(batch)
-            with mlflow.start_run() as run:
-                client.log_batch(run.info.run_id, metrics=batch['metrics'], params=batch['params'], tags=batch['tags'])
-                client.log_artifacts(run.info.run_id, os.path.join('/home/mlruns', '0', local_runs.loc[idx]['run_id'], 'artifacts'))                
-                client.create_registered_model(batch['name'])
-                # source 위치 반드시 실제 저장소랑 똑같이 맞춰야함 
-                # source 기준으로 실제 파일 접근함
-                client.create_model_version(
-                    name=batch['name'],
-                    source=f"{os.environ['ftp']}/0/{run.info.run_id}/artifacts/model",
-                    run_id=run.info.run_id,
-                    description=f"{batch['name']} model for smart"
-                )
-                client.transition_model_version_stage(
-                    name=batch['name'],
-                    version=1,
-                    stage="Production"
-                )
+    def __init__(self, prometheus_url, logger, train, test):
+        self.url = prometheus_url
+        self.logger = logger
+        self.train = train
+        self.test = test
+
+    def load_data(self):
+        if not os.path.exists(self.train):
+            raise FileNotFoundError('train file not found')
+        if not os.path.exists(self.test):
+            raise FileNotFoundError('test file not found')
+        return pd.read_csv(self.train), pd.read_csv(self.test)
+
+    def collect(self):
+        data = self.load_data()
+        models = [RF(data, PARAMS['RF']), XGB(data, PARAMS['XGB']), OCSVM(data, PARAMS['OCSVM'])]
+        runs = list()
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            tasks = [executor.submit(model.optimize) for model in models]
+            for task in as_completed(tasks):
+                runs.append(task.result())
+
+        self.logger.error(runs)
+        for run in runs:
+            with mlflow.start_run():
+                mlflow.set_tags({'estimator_name': run['name']})
+                mlflow.log_metrics(run['metrics'])
+                mlflow.log_params(run['params'])
+                if run['name'] == 'XGBClassifier':
+                    mlflow.xgboost.log_model(run['model'], 'model')
+                else:
+                    mlflow.sklearn.log_model(run['model'], 'model')
+            gmt = GaugeMetricFamily(name=f"{run['name'].lower()}_hyperparameter", documentation='', labels=['name'])
+            for key, value in run['params'].items():
+                gmt.add_metric(key, value)
+            yield gmt
+
+
+app = Flask(__name__)
+exporter = PrometheusMetrics(app)
+
+
+@app.route('/favicon.ico')
+@exporter.do_not_track()
+def favicon():
+    return 'ok'
+
+
+@app.route('/')
+@exporter.do_not_track()
+def main():
+    """ context root """
+    return """
+        <html>
+            <head><title>Optimizer Exporter</title></head>
+            <body>
+                <h1>Optimizer Exporter</h1>
+                <p><a href='/metrics'>Metrics</a></p>
+            </body>
+        </html>
+    """
 
 
 def parse_env():
     # use get function instead of key access to avoid error
+    host = os.environ.get('host')
+    port = os.environ.get('port')
     repo = os.environ.get('repo')
-    mode = os.environ.get('MODE')
+    prom = os.environ.get('prom')
 
     # TODO regex validation
+    if host is None:
+        os.environ['host'] = '0.0.0.0'
+    if port is None:
+        os.environ['port'] = '9109'
     if repo is None:
         os.environ['repo'] = 'model-repository'
-    if mode is None:
-        os.environ['MODE'] = 'none'
+    if prom is None:
+        os.environ['prom'] = "prometheus:9090"
+    os.environ['prom'] = f"http://{os.environ['prom']}/api/v1/query"
     os.environ['tracking'] = f'http://{os.environ["repo"]}:5000'
     os.environ['ftp'] = f'ftp://mlflow:mlflow@{os.environ["repo"]}/mlflow/artifacts/'
 
-
 if __name__ == '__main__':
     parse_env()
-    # if os.environ['MODE'] == 'install':
-        # save_runs()
-    save_runs()
+    register_model()
+    # mlflow.set_tracking_uri(os.environ['repo'])
+    exporter.registry.register(SmartOptimizerExporter(os.environ['prom'], app.logger, 'data/smart_train.csv', 'data/cd_fail_col.csv'))
+    app.run(host=os.environ.get('host'), port=os.environ.get('port'))
