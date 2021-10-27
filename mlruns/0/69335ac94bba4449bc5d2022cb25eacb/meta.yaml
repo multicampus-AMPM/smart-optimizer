@@ -1,0 +1,15 @@
+artifact_uri: file:///D:/Inye/workspaces/optimizer/mlruns/0/69335ac94bba4449bc5d2022cb25eacb/artifacts
+end_time: 1635366073252
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+name: ''
+run_id: 69335ac94bba4449bc5d2022cb25eacb
+run_uuid: 69335ac94bba4449bc5d2022cb25eacb
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1635366071664
+status: 3
+tags: []
+user_id: inye
