@@ -2,7 +2,6 @@ from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from sklearn.svm import OneClassSVM
 from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, classification_report
-from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.model_selection import GridSearchCV
 import mlflow
@@ -10,6 +9,9 @@ from mlflow.tracking import MlflowClient
 from mlflow.entities import Metric, Param, RunTag
 import os
 import time
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
+import tensorflow as tf
+import numpy as np
 
 
 def get_batch(run_info):
@@ -49,17 +51,18 @@ def register_model():
     # if exp is None:
     #     client.create_experiment('SMART', os.environ['ftp'])
     #     exp = client.get_experiment_by_name('SMART')
-    
+
     for idx in range(local_runs.shape[0]):
         batch = get_batch(local_runs.loc[idx])
         try:
-            already_registered_model = client.get_registered_model(batch['name'])
-            print(f'{batch["name"]} registered')
+            test = client.get_registered_model(batch['name'])
         except Exception as e:
-            # RESOURCE_DOES_NOT_EXISTS
-            already_registered_model = None
-        if already_registered_model:
+            # RESOURCE_DOES_NOT_EXIST
+            test = None
+
+        if test is not None:
             continue
+
         with mlflow.start_run() as run:
             client.log_batch(run.info.run_id, metrics=batch['metrics'], params=batch['params'], tags=batch['tags'])
             client.log_artifacts(run.info.run_id, os.path.join('./mlruns', '0', local_runs.loc[idx]['run_id'], 'artifacts'))
@@ -100,24 +103,7 @@ class AMPMModel:
         self.params = params
 
     def preprocess_data(self, data):
-        train, test = self.fill(data)
-        features = train.columns[5:]
-        label = train.columns[4]
-        x_train = train[features]
-        y_train = train[label]
-        x_test = test[features]
-        y_test = test[label]
-        x_train, x_test = self.encoding(x_train, x_test)
-        return (x_train, y_train), (x_test, y_test)
-
-    def fill(self, data):
-        train, test = data
-        train = train.fillna(0)
-        test = test.fillna(0)
-        return train, test
-
-    def encoding(self, train, test):
-        return train, test
+        raise AttributeError('Model not defined')
 
     def create_model(self, params):
         raise AttributeError('Model not defined')
@@ -129,7 +115,11 @@ class AMPMModel:
         grid_search.fit(x_train, y_train)
         best_model = grid_search.best_estimator_
         prediction = best_model.predict(x_test)
+        if self.name == 'OneClassSVM' or 'OneClassSVMWithKeras':
+            prediction = np.where(prediction == 1, 0, prediction)
+            prediction = np.where(prediction == -1, 1, prediction)
         print(f"{self.name} : {confusion_matrix(y_test, prediction)}")
+        print(prediction)
         return {
             'name': self.name,
             'model': best_model,
@@ -140,39 +130,117 @@ class AMPMModel:
 
 class RF(AMPMModel):
 
+    def preprocess_data(self, data):
+        train, test = data
+        train = train.fillna(0)
+        test = test.fillna(0)
+        features = train.columns[5:]
+        label = train.columns[4]
+        x_train = train[features]
+        y_train = train[label]
+        x_test = test[features]
+        y_test = test[label]
+        scaler = MinMaxScaler()
+        x_train = scaler.fit_transform(x_train)
+        x_test = scaler.transform(x_test)
+        return (x_train, y_train), (x_test, y_test)
+
     def create_model(self, params):
         return RandomForestClassifier()
 
 
 class XGB(AMPMModel):
 
-    def fill(self, data):
+    def preprocess_data(self, data):
         train, test = data
-        train = train.fillna(train.mean())
         train = train.fillna(0)
         test = test.fillna(0)
-        return train, test
+        features = train.columns[5:]
+        label = train.columns[4]
+        x_train = train[features]
+        y_train = train[label]
+        x_test = test[features]
+        y_test = test[label]
+        scaler = MinMaxScaler()
+        x_train = scaler.fit_transform(x_train)
+        x_test = scaler.fit_transform(x_test)
+        return (x_train, y_train), (x_test, y_test)
 
     def create_model(self, params):
         return XGBClassifier()
 
 
+# class OCSVM(AMPMModel):
+#
+#     def preprocess_data(self, data):
+#         train, test = data
+#         train = train.fillna(0)
+#         test = test.fillna(0)
+#         train = train[train['failure'] == 0]
+#         features = train.columns[5:]
+#         label = train.columns[4]
+#         x_train = train[features]
+#         y_train = train[label]
+#         x_test = test[features]
+#         y_test = test[label]
+#         pca = PCA(n_components=2)
+#         std_scaler = StandardScaler()
+#         x_train = pca.fit_transform(std_scaler.fit_transform(x_train))
+#         x_test = pca.fit_transform(std_scaler.fit_transform(x_test))
+#         return (x_train, y_train), (x_test, y_test)
+#
+#     def create_model(self, params):
+#         return OneClassSVM()
+
+
 class OCSVM(AMPMModel):
 
-    def encoding(self, x):
-        return PCA(n_components=1).fit_transform(StandardScaler().fit_transform(x))
-
-    def encoding(self, train, test):
-        pca = PCA(n_components=1)
-        scaler = StandardScaler()
-        return pca.fit_transform(scaler.fit_transform(train)), pca.fit_transform(scaler.fit_transform(test))
-
-    def fill(self, data):
+    def preprocess_data(self, data):
         train, test = data
         train = train.fillna(0)
         test = test.fillna(0)
         train = train[train['failure'] == 0]
-        return train, test
+
+        # conver to ndarray
+        train_arr = np.array(train)
+        x_train = train_arr[:, 5:]
+        y_train = train_arr[:, 4]
+        test_arr = np.array(test)
+        x_test = test_arr[:, 5:]
+        y_test = test_arr[:, 4]
+
+        # minmaxscaler
+        scaler = MinMaxScaler()
+        x_train = scaler.fit_transform(x_train)
+        x_test = scaler.fit_transform(x_test)
+
+        # reshape
+        x_train = x_train.reshape(-1, 59, 2, 1)
+        x_test = x_test.reshape(-1, 59, 2, 1)
+        y_train = y_train.astype(float)
+        y_test = y_test.astype(float)
+
+        # encoding
+        encoder_input = tf.keras.Input(shape=(59, 2, 1))
+        x = tf.keras.layers.Conv2D(64, 3, strides=2, padding='same')(encoder_input)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.LeakyReLU()(x)
+        x = tf.keras.layers.Conv2D(64, 3, padding='same')(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.LeakyReLU()(x)
+        x = tf.keras.layers.Flatten()(x)
+        encoder_output = tf.keras.layers.Dense(2)(x)
+        encoder_train = tf.keras.Model(encoder_input, encoder_output)
+        encoder_train.compile(optimizer=tf.keras.optimizers.Adam(0.0005), loss=tf.keras.losses.MeanSquaredError())
+        encoder_train.fit(x_train, y_train, batch_size=1, epochs=10)
+        x_train = encoder_train.predict(x_train)
+
+        encoder_test = tf.keras.Model(encoder_input, encoder_output)
+        encoder_test.compile(optimizer=tf.keras.optimizers.Adam(0.0005), loss=tf.keras.losses.MeanSquaredError())
+        encoder_test.fit(x_test, y_test, batch_size=1, epochs=10)
+        x_test = encoder_test.predict(x_test)
+
+        return (x_train, y_train), (x_test, y_test)
 
     def create_model(self, params):
         return OneClassSVM()
