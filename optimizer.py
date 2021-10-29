@@ -115,5 +115,5 @@ if __name__ == '__main__':
     parse_env()
     register_model()
     # mlflow.set_tracking_uri(os.environ['repo'])
-    exporter.registry.register(SmartOptimizerExporter(os.environ['prom'], app.logger, 'data/smart_train.csv', 'data/cd_fail_col.csv'))
+    # exporter.registry.register(SmartOptimizerExporter(os.environ['prom'], app.logger, 'data/smart_train.csv', 'data/cd_fail_col.csv'))
     app.run(host=os.environ.get('host'), port=os.environ.get('port'))

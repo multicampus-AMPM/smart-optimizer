@@ -1,0 +1,6 @@
+{
+  "accuracy_score___": "accuracy_score(y_true=y_test, y_pred=prediction)",
+  "f1_score___": "f1_score(y_true=y_test, y_pred=prediction)",
+  "precision_score___": "precision_score(y_true=y_test, y_pred=prediction)",
+  "recall_score___": "recall_score(y_true=y_test, y_pred=prediction)"
+}

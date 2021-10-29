@@ -20,17 +20,18 @@ def get_batch(run_info):
     tags = list()
     dict_info = run_info.to_dict()
     for key in dict_info.keys():
-        if key.startswith('metric'):
-            metrics.append(Metric(key, dict_info[key], int(time.time() * 1000), 0))
+        value = 'None' if dict_info[key] is None else dict_info[key]
+        if key.startswith('metrics'):
+            metrics.append(Metric(key.replace('metrics.', ''), value, int(time.time() * 1000), 0))
         elif key.startswith('params'):
             # params.append(Param(key, dict_info[key]))
             # 역직렬화에서 None을 literal하게 None으로 치환하면 sqlite에서 뱉어냄 (버그인듯)
-            params.append(Param(key, 'None' if dict_info[key] is None else dict_info[key]))
+            params.append(Param(key.replace('params.', ''), value))
         elif key.startswith('tags'):
             # 5000자 넘어가면 저장 못함
             if key == 'tags.mlflow.log-model.history':
                 continue
-            tags.append(RunTag(key, dict_info[key]))
+            tags.append(RunTag(key.replace('tags.', ''), value))
     return {
         'name' : dict_info['tags.estimator_name'],
         'metrics' : metrics,
@@ -59,7 +60,7 @@ def register_model():
         except Exception as e:
             # RESOURCE_DOES_NOT_EXIST
             test = None
-
+        
         if test is not None:
             continue
 
